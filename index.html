@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Geminon Cognition 3D</title>
+  <style>
+    body {
+      margin: 0;
+      background: radial-gradient(circle, #111, #000);
+      overflow: hidden;
+    }
+    #container {
+      width: 100vw;
+      height: 100vh;
+    }
+    canvas {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="container"></div>
+
+  <!-- Load full UMD builds that work globally -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.155.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.155.0/examples/js/controls/OrbitControls.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.155.0/examples/js/loaders/FontLoader.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.155.0/examples/js/geometries/TextGeometry.min.js"></script>
+
+  <script>
+    const container = document.getElementById('container');
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.z = 5;
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    container.appendChild(renderer.domElement);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+    // Starfield
+    const starsGeometry = new THREE.BufferGeometry();
+    const starCount = 1200;
+    const starVertices = [];
+    for (let i = 0; i < starCount; i++) {
+      starVertices.push(
+        THREE.MathUtils.randFloatSpread(200),
+        THREE.MathUtils.randFloatSpread(200),
+        THREE.MathUtils.randFloatSpread(200)
+      );
+    }
+    starsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3));
+    const starMaterial = new THREE.PointsMaterial({ color: 0x66ffff, size: 0.2 });
+    const starField = new THREE.Points(starsGeometry, starMaterial);
+    scene.add(starField);
+
+    // Lighting
+    const ambient = new THREE.AmbientLight(0x333333);
+    scene.add(ambient);
+    const pointLight = new THREE.PointLight(0x00ffff, 1.5);
+    pointLight.position.set(10, 10, 10);
+    scene.add(pointLight);
+
+    let textMesh;
+    const loader = new THREE.FontLoader();
+    loader.load('https://threejs.org/examples/fonts/helvetiker_bold.typeface.json', font => {
+      const geometry = new THREE.TextGeometry('Geminon Cognition', {
+        font: font,
+        size: 0.7,
+        height: 0.3,
+        bevelEnabled: true,
+        bevelThickness: 0.03,
+        bevelSize: 0.02,
+        bevelSegments: 4
+      });
+      geometry.center();
+
+      const material = new THREE.MeshStandardMaterial({
+        color: 0x00ffff,
+        emissive: 0x006666,
+        metalness: 0.6,
+        roughness: 0.2
+      });
+
+      textMesh = new THREE.Mesh(geometry, material);
+      scene.add(textMesh);
+    });
+
+    let angle = 0;
+    function animate() {
+      requestAnimationFrame(animate);
+      if (textMesh) {
+        angle += 0.01;
+        textMesh.rotation.y = angle;
+        textMesh.material.emissiveIntensity = 0.7 + Math.sin(angle * 2) * 0.3;
+      }
+      starField.rotation.y += 0.0004;
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>
